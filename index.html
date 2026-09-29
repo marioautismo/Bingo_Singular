@@ -375,7 +375,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 66px;margin-top:40px}
 const DIRECTO = {
   titulo: 'Directo de Singular Club',
   cuando: 'Jueves 8 de octubre, 19:00 hora española',
-  youtube: 'https://youtube.com/live/-NMJI54Tbdw',
+  youtube: 'https://tinyurl.com/DirectoApertura',
   inicioUTC: '20261008T170000Z',
   finUTC: '20261008T180000Z'
 };
@@ -488,11 +488,8 @@ let lineasHechas = new Set();
 let abierta = null;
 let ultimoFoco = null;
 
-function guardar(){
-  try{
-    localStorage.setItem(CLAVE, JSON.stringify({ m:[...marcadas], v:[...vistas] }));
-  }catch(e){}
-}
+/* Sin memoria entre visitas: cada vez que se abre, el bingo empieza vacío. */
+function guardar(){}
 function cargar(){
   try{
     const raw = localStorage.getItem(CLAVE);
@@ -860,7 +857,6 @@ document.getElementById('btnNo').addEventListener('click', () => {
 document.getElementById('verResultado').addEventListener('click', () => pintarResultado(true));
 document.getElementById('reiniciar').addEventListener('click', reiniciar);
 
-cargar();
 LINEAS.forEach((l, i) => { if(l.every(p => marcadas.has(ORDEN[p]))) lineasHechas.add(i); });
 pintarRejilla();
 actualizarEstado();
