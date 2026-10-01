@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
+<!-- saved from url=(0052)file:///C:/Users/manbc/Downloads/bingo-singular.html -->
+<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="dark">
 <title>Bingo Singular · Singular Club</title>
@@ -37,6 +37,20 @@
     · Gráficos visibles en SVG. El canvas solo se crea fuera de pantalla para
       exportar el PNG, con guarda por si getContext devuelve null
     · Export PNG a 2x. Claim en el pie del archivo y de la imagen exportada
+
+  AMBIENTACIÓN · sala de bingo (bloque AMBIENTACIÓN del <style>)
+    Capa .sala fija detrás del contenido: focos que barren, tablero luminoso
+    de 90 números (solo por encima de 1180 px), bombo girando con bolas dentro,
+    bolas que suben y tiras de bombillas de marquesina arriba y abajo.
+    Las bolas usan la paleta extendida (oro #C9A227, teal #2E7D74,
+    coral #E2725B, ciruela #6B4C6A) porque un bingo es multicolor.
+    Todo es SVG o CSS. Con prefers-reduced-motion la sala se queda quieta.
+    Bombillas de marquesina: SVG generado por JS alrededor de cada .luces
+    (letrero, cartón y resultado) y en las tiras. Paso en PASO_BOMBILLA.
+    Casillas con «No me pasa»: fondo carbón rayado, borde y aspa en
+    terracota y texto atenuado. Se guardan en localStorage junto al resto.
+    Los números de las casillas son su posición en el cartón (1 a 16) y
+    coinciden con la bola que sale en el panel.
 
   CONTENIDO (todo en el <script>, al principio)
     DIRECTO   fecha, hora y enlace de YouTube. Cambia DIRECTO.youtube por el
@@ -311,35 +325,413 @@ footer{border-top:1px solid var(--line);padding:26px 0 66px;margin-top:40px}
   .casilla.marcada .sello,.velo.abierto,.velo.abierto .panel{animation:none}
   .aviso{transition:none}
 }
+
+/* ==========================================================================
+   AMBIENTACIÓN · Sala de bingo
+   Capa fija detrás del contenido: focos, tablero luminoso, bombo girando,
+   bolas que suben y tiras de bombillas de marquesina arriba y abajo.
+   Todo se congela con prefers-reduced-motion.
+   ========================================================================== */
+:root{
+  --oro:#C9A227;
+  --bombilla:radial-gradient(circle at 50% 50%, #F2EFE6 0 1.8px, #DDA73E 2.8px 3.6px, rgba(221,167,62,.42) 4.6px, rgba(221,167,62,0) 8.5px);
+  --bombilla-off:radial-gradient(circle at 50% 50%, rgba(242,239,230,.25) 0 1.6px, rgba(181,83,42,.75) 2.6px 3.4px, rgba(181,83,42,0) 4.6px);
+}
+.defs-sala{position:absolute;width:0;height:0;overflow:hidden}
+.sala{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.sala::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,
+    rgba(23,21,17,0) 0,
+    rgba(23,21,17,0) calc(50% - 560px),
+    rgba(23,21,17,.62) calc(50% - 400px),
+    rgba(23,21,17,.62) calc(50% + 400px),
+    rgba(23,21,17,0) calc(50% + 560px),
+    rgba(23,21,17,0) 100%);
+}
+
+/* Focos que barren la sala */
+.foco{
+  position:absolute;top:-12vh;width:46vw;min-width:420px;height:135vh;
+  transform-origin:50% 0;mix-blend-mode:screen;
+  background:linear-gradient(180deg, rgba(221,167,62,.30), rgba(221,167,62,.08) 55%, rgba(221,167,62,0) 85%);
+  clip-path:polygon(47% 0, 53% 0, 100% 100%, 0 100%);
+  animation:barrer 11s ease-in-out infinite alternate;
+}
+.foco.f1{left:-8vw;--a:-24deg;--b:10deg}
+.foco.f2{right:-8vw;--a:22deg;--b:-12deg;animation-duration:13s;animation-delay:-4s}
+.foco.f3{left:27vw;--a:-9deg;--b:9deg;animation-duration:8s;animation-delay:-2s;
+  background:linear-gradient(180deg, rgba(181,83,42,.30), rgba(181,83,42,.06) 55%, rgba(181,83,42,0) 80%)}
+@keyframes barrer{from{transform:rotate(var(--a))}to{transform:rotate(var(--b))}}
+
+/* Tablero luminoso de números */
+.tablero{
+  position:absolute;width:300px;top:15vh;
+  left:clamp(-220px, calc((50vw - 380px - 300px) / 2), 70px);
+  filter:drop-shadow(0 18px 40px rgba(0,0,0,.55));
+}
+.tablero .tab-tit{font-family:'Archivo Flex','Archivo',sans-serif;font-stretch:80%;font-weight:900;font-size:22px;letter-spacing:.32em;fill:#171511;text-anchor:middle;dominant-baseline:central}
+.tablero .tn text{font-family:'Archivo Flex','Archivo',sans-serif;font-stretch:78%;font-weight:800;font-size:11.5px;text-anchor:middle;dominant-baseline:central}
+.tablero .tn.off circle{fill:rgba(242,239,230,.04);stroke:rgba(242,239,230,.12)}
+.tablero .tn.off text{fill:rgba(242,239,230,.30)}
+.tablero .tn.on circle{fill:#DDA73E;filter:drop-shadow(0 0 5px rgba(221,167,62,.85))}
+.tablero .tn.on text{fill:#171511}
+.tablero .tn.blink circle{animation:parpadeo 1.6s steps(1,end) infinite}
+.tablero .tn.blink text{animation:parpadeoTxt 1.6s steps(1,end) infinite}
+@keyframes parpadeo{0%{fill:#DDA73E}50%{fill:#B5532A}100%{fill:#DDA73E}}
+@keyframes parpadeoTxt{0%{fill:#171511}50%{fill:#F2EFE6}100%{fill:#171511}}
+
+/* Bombo */
+.bombo{
+  position:absolute;width:420px;bottom:3vh;
+  right:clamp(-220px, calc((50vw - 380px - 420px) / 2), 60px);
+  filter:drop-shadow(0 0 30px rgba(221,167,62,.18));
+}
+.bombo .bn,.panel-bola .bn,.bola-flota .bn{font-family:'Archivo Flex','Archivo',sans-serif;font-stretch:80%;font-weight:800;fill:#171511;text-anchor:middle;dominant-baseline:central}
+.bombo .jaula{transform-origin:210px 210px;animation:girar 9s linear infinite}
+.bombo .revuelve{transform-origin:210px 210px;animation:revolver 2.3s ease-in-out infinite alternate}
+.bombo .salta{transform-box:fill-box;transform-origin:50% 50%;animation:saltar 1.15s ease-in-out infinite alternate}
+.bombo .vuela{animation:volar 2.3s ease-in-out infinite alternate}
+.bombo .vuela.v2{animation-delay:-1.1s;animation-duration:1.9s}
+.bombo .sale{transform-box:fill-box;transform-origin:50% 50%;animation:salir 4.6s ease-in-out infinite}
+.bombo .bb{fill:#DDA73E;filter:drop-shadow(0 0 4px rgba(221,167,62,.9));animation:bombillaSvg 1s steps(1,end) infinite}
+.bombo .bb.par{animation-delay:-.5s}
+@keyframes girar{to{transform:rotate(360deg)}}
+@keyframes revolver{from{transform:rotate(-30deg)}to{transform:rotate(26deg)}}
+@keyframes saltar{from{transform:translateY(0)}to{transform:translateY(-9px) rotate(40deg)}}
+@keyframes volar{from{transform:translate(0,90px)}to{transform:translate(18px,-20px)}}
+@keyframes salir{0%,55%{transform:scale(1)}65%{transform:scale(1.18) translateY(-6px)}80%,100%{transform:scale(1)}}
+@keyframes bombillaSvg{0%{fill:#DDA73E;opacity:1}50%{fill:#B5532A;opacity:.55}100%{fill:#DDA73E;opacity:1}}
+
+/* Bolas que suben por la sala */
+.bola-flota{
+  position:absolute;left:var(--x);bottom:-100px;width:var(--s);height:var(--s);
+  opacity:.75;will-change:transform;
+  animation:flotar var(--d) linear var(--r) infinite;
+}
+.bola-flota svg{width:100%;height:100%;display:block;filter:drop-shadow(0 8px 14px rgba(0,0,0,.5))}
+@keyframes flotar{
+  from{transform:translateY(0) rotate(0)}
+  to{transform:translateY(calc(-100vh - 220px)) rotate(420deg)}
+}
+
+/* Tiras de bombillas de marquesina, fijas arriba y abajo */
+.tira{
+  position:fixed;left:0;right:0;height:20px;z-index:30;pointer-events:none;
+  background:
+    var(--bombilla) 0 50% / 24px 100% repeat-x,
+    var(--bombilla-off) 12px 50% / 24px 100% repeat-x,
+    linear-gradient(180deg,#1E1B17,#171511);
+  animation:marquesina 1s infinite;
+}
+.tira.arriba{top:0;border-bottom:1px solid rgba(221,167,62,.35)}
+.tira.abajo{bottom:0;border-top:1px solid rgba(221,167,62,.35);animation-delay:-.5s}
+@keyframes marquesina{
+  0%{background-position:0 50%,12px 50%,0 0;animation-timing-function:steps(1,end)}
+  50%{background-position:12px 50%,24px 50%,0 0;animation-timing-function:steps(1,end)}
+  100%{background-position:12px 50%,24px 50%,0 0}
+}
+/* Bombillas en SVG: las dibuja el JS alrededor de cada .luces y a lo largo
+   de cada .tira, repartidas para que ninguna quede cortada. Sin JS, las tiras
+   conservan el fondo de bombillas en CSS de arriba. */
+html.bombillas-js .tira{background:linear-gradient(180deg,#1E1B17,#171511);animation:none}
+.bombillas{position:absolute;pointer-events:none;overflow:visible;z-index:3}
+.bb-vidrio{fill:#DDA73E;fill-opacity:.28;stroke:#DDA73E;stroke-opacity:.45;stroke-width:1}
+.bb-nucleo{fill:#F2EFE6}
+.bb-on{animation:persecucion 1.2s linear infinite}
+.bb-on.f1{animation-delay:-.8s}
+.bb-on.f2{animation-delay:-.4s}
+@keyframes persecucion{0%,30%{opacity:1}38%,92%{opacity:.07}100%{opacity:1}}
+
+/* ---------- Cabecera: letrero ---------- */
+header{padding-top:64px}
+.letrero{
+  position:relative;display:inline-block;max-width:100%;
+  margin:24px 0 24px;padding:20px 30px 22px;
+  border:2px solid rgba(221,167,62,.6);border-radius:22px;
+  background:linear-gradient(180deg,rgba(38,34,24,.96),rgba(30,27,23,.96));
+  box-shadow:0 0 0 6px rgba(23,21,17,.85),0 0 0 7px rgba(221,167,62,.18),0 0 60px rgba(221,167,62,.20),inset 0 0 36px rgba(221,167,62,.07);
+}
+.letrero h1{
+  margin:0;font-size:clamp(40px,10vw,84px);
+  color:var(--crema);
+  text-shadow:0 0 18px rgba(221,167,62,.45),0 0 2px rgba(242,239,230,.6);
+}
+.lede{text-shadow:0 1px 12px rgba(23,21,17,.9)}
+.cita{gap:8px}
+.cita span{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:7px 14px;border-radius:999px;
+  background:rgba(30,27,23,.9);border:1px solid var(--line-2);
+}
+.cita span:first-child::before{
+  content:'';width:8px;height:8px;border-radius:50%;background:var(--terracota);
+  box-shadow:0 0 0 0 rgba(181,83,42,.7);animation:latido 1.6s ease-out infinite;
+}
+@keyframes latido{from{box-shadow:0 0 0 0 rgba(181,83,42,.7)}to{box-shadow:0 0 0 9px rgba(181,83,42,0)}}
+
+/* ---------- Cartón ---------- */
+main{padding-top:22px}
+.carton{
+  position:relative;
+  background:linear-gradient(180deg,#262218,#1E1B17);
+  box-shadow:0 0 0 6px var(--carbon),0 0 0 7px var(--ocre-18),0 28px 70px rgba(0,0,0,.55),0 0 90px rgba(221,167,62,.12);
+}
+.carton-cab{
+  align-items:center;margin:0 0 12px;padding:10px 16px;border-radius:12px;
+  background:radial-gradient(140% 120% at 20% 0%, rgba(242,239,230,.25), rgba(242,239,230,0) 60%), var(--ocre);
+  color:rgba(23,21,17,.72);font-weight:600;
+}
+.carton-cab .nombre{color:var(--carbon);font-size:20px}
+.rejilla{gap:6px;border:0;border-radius:0;overflow:visible}
+.casilla{
+  border:0;border-radius:10px;
+  box-shadow:inset 0 0 0 1px var(--line-2),inset 0 -22px 30px rgba(23,21,17,.32);
+  transition:background .18s,transform .18s,box-shadow .18s;
+}
+.casilla:hover{transform:translateY(-1px)}
+.casilla .numc{
+  position:absolute;top:7px;right:9px;z-index:1;
+  font-family:'Archivo Flex',var(--data);font-stretch:75%;font-weight:800;font-size:14px;line-height:1;
+  color:var(--crema-28);
+}
+.casilla.marcada{
+  background:radial-gradient(120% 90% at 28% 18%, rgba(242,239,230,.24), rgba(242,239,230,0) 55%), var(--ocre);
+  box-shadow:inset 0 0 0 1px rgba(23,21,17,.18),inset 0 -14px 24px rgba(181,83,42,.28),0 0 20px rgba(221,167,62,.35);
+}
+.casilla.marcada:hover{background:radial-gradient(120% 90% at 28% 18%, rgba(242,239,230,.3), rgba(242,239,230,0) 55%), #E6B456}
+.casilla.marcada .numc{color:rgba(23,21,17,.5)}
+.casilla.brilla{animation:linea 1.1s ease-in-out 2;z-index:2}
+@keyframes linea{
+  0%,100%{transform:none}
+  50%{transform:scale(1.05);box-shadow:inset 0 0 0 2px var(--terracota),0 0 0 3px rgba(181,83,42,.55),0 0 34px rgba(181,83,42,.75)}
+}
+
+/* ---------- Estado ---------- */
+.estado{
+  margin-top:26px;padding:10px 10px 10px 12px;
+  background:rgba(23,21,17,.82);border:1px solid var(--line-2);border-radius:26px;
+}
+.contador{display:flex;align-items:center;gap:10px}
+.contador b{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:48px;height:48px;border-radius:50%;margin:0;
+  font-size:21px;color:var(--carbon);
+  background:radial-gradient(circle at 50% 50%, #F2EFE6 0 50%, rgba(242,239,230,0) 52%), radial-gradient(circle at 35% 28%, #E6B456, #DDA73E 45%, #B5532A 120%);
+  box-shadow:inset -4px -6px 10px rgba(23,21,17,.35),0 0 18px rgba(221,167,62,.35);
+}
+.ayuda{text-shadow:0 1px 10px rgba(23,21,17,.95)}
+
+/* ---------- Aviso de línea ---------- */
+.aviso{
+  bottom:44px;display:flex;align-items:center;gap:10px;
+  font-size:13px;line-height:18px;padding:11px 24px 11px 12px;
+  box-shadow:0 0 0 4px rgba(181,83,42,.25),0 0 34px rgba(181,83,42,.6);
+}
+.aviso::before{
+  content:'';width:18px;height:18px;border-radius:50%;flex:none;
+  background:radial-gradient(circle, #F2EFE6 0 45%, #DDA73E 48%);
+}
+
+/* ---------- Panel de la casilla ---------- */
+.velo{background:rgba(23,21,17,.74);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.panel{
+  background:radial-gradient(460px 220px at 10% 0%, rgba(221,167,62,.16), rgba(221,167,62,0) 70%), var(--carbon-2);
+  border:1px solid rgba(221,167,62,.4);
+  box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 60px rgba(221,167,62,.10);
+}
+.panel-bola{width:62px;height:62px;margin:-4px 0 12px}
+.panel-bola svg{width:100%;height:100%;display:block;filter:drop-shadow(0 8px 14px rgba(0,0,0,.5))}
+.velo.abierto .panel-bola{animation:cantar .55s cubic-bezier(.3,1.5,.5,1)}
+@keyframes cantar{from{opacity:0;transform:translateY(-34px) rotate(-120deg)}to{opacity:1;transform:none}}
+
+/* ---------- Resultado ---------- */
+.resultado{
+  position:relative;margin-top:56px;padding:36px 32px 30px;
+  border:2px solid rgba(221,167,62,.6);border-radius:22px;
+  background:radial-gradient(640px 280px at 0% 0%, rgba(221,167,62,.14), rgba(221,167,62,0) 70%), linear-gradient(180deg,rgba(38,34,24,.97),rgba(30,27,23,.97));
+  box-shadow:0 0 0 6px rgba(23,21,17,.85),0 0 0 7px rgba(221,167,62,.18),0 0 70px rgba(221,167,62,.16);
+}
+.res-tit{text-shadow:0 0 22px rgba(221,167,62,.35)}
+.barra.top{background:linear-gradient(90deg, rgba(221,167,62,.10), rgba(221,167,62,0));}
+.barra .n{padding-left:4px}
+.directo-bloque{
+  position:relative;background:var(--carbon);
+  border:1px dashed rgba(221,167,62,.5);
+}
+
+
+footer{position:relative;margin-bottom:20px}
+
+/* ---------- Botón al estreno ---------- */
+.estreno-wrap{margin-top:18px}
+.btn-estreno{
+  gap:10px;font-size:12px;padding:14px 24px 14px 20px;
+  box-shadow:0 0 0 4px rgba(221,167,62,.18),0 0 28px rgba(221,167,62,.45);
+  animation:reclamo 2.4s ease-in-out infinite;
+}
+.btn-estreno[hidden]{display:none}
+.btn-estreno svg{width:12px;height:12px;display:block;flex:none}
+.btn-estreno[aria-disabled="true"]{
+  background:rgba(30,27,23,.9);border-color:var(--line-2);color:var(--crema-45);
+  box-shadow:none;animation:none;cursor:default;pointer-events:none;
+}
+@keyframes reclamo{
+  0%,100%{box-shadow:0 0 0 4px rgba(221,167,62,.18),0 0 28px rgba(221,167,62,.45)}
+  50%{box-shadow:0 0 0 7px rgba(221,167,62,.10),0 0 40px rgba(221,167,62,.65)}
+}
+@media(max-width:520px){
+  .btn-estreno{width:100%}
+}
+
+/* ---------- Lista de casillas marcadas en el bloque del directo ---------- */
+.mis-casillas{
+  list-style:none;margin:12px 0 4px;padding:0;
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 18px;
+}
+.mis-casillas li{display:flex;align-items:flex-start;gap:10px;font-size:14.5px;line-height:1.35;color:var(--crema)}
+.mc-bola{
+  flex:none;display:inline-flex;align-items:center;justify-content:center;
+  width:24px;height:24px;border-radius:50%;margin-top:-2px;
+  font-family:'Archivo Flex',var(--data);font-stretch:80%;font-weight:800;font-size:11px;color:var(--carbon);
+  background:radial-gradient(circle, #F2EFE6 0 46%, rgba(242,239,230,0) 49%), var(--ocre);
+  box-shadow:inset -2px -3px 5px rgba(23,21,17,.3);
+}
+@media(max-width:560px){ .mis-casillas{grid-template-columns:1fr} }
+
+/* ---------- Casilla descartada: «No me pasa» ---------- */
+.casilla .tacha{position:absolute;inset:0;z-index:0;display:none;pointer-events:none}
+.casilla .tacha svg{width:100%;height:100%;display:block}
+.casilla .no-ico{
+  position:absolute;top:7px;left:8px;z-index:1;display:none;
+  width:18px;height:18px;border-radius:50%;
+  background:var(--terracota);
+  align-items:center;justify-content:center;
+}
+.casilla .no-ico svg{width:8px;height:8px;display:block}
+.casilla.descartada{
+  background:repeating-linear-gradient(135deg, rgba(181,83,42,.07) 0 6px, rgba(181,83,42,0) 6px 12px), var(--carbon);
+  box-shadow:inset 0 0 0 1.5px rgba(181,83,42,.7);
+}
+.casilla.descartada:hover{background:repeating-linear-gradient(135deg, rgba(181,83,42,.12) 0 6px, rgba(181,83,42,0) 6px 12px), var(--carbon)}
+.casilla.descartada .tacha{display:block;animation:tachar .3s ease-out}
+.casilla.descartada .no-ico{display:flex}
+.casilla.descartada .leida{opacity:0}
+.casilla.descartada .txt{color:var(--crema-45)}
+.casilla.descartada .numc{color:rgba(181,83,42,.9)}
+@keyframes tachar{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:none}}
+
+/* Hueco arriba para que el texto de la casilla no choque con su número */
+.casilla{padding-top:32px}
+@media(max-width:699px){ .casilla{padding-top:24px} }
+@media(max-width:360px){
+  .casilla{padding:22px 4px 7px 5px}
+  .casilla .txt{font-size:10px;line-height:1.22}
+  .rejilla{gap:3px}
+}
+
+@media(max-width:1180px){
+  .tablero{display:none}
+}
+@media(max-width:899px){
+  .sala::after{background:rgba(23,21,17,.42)}
+  .bombo{width:300px;right:-110px;bottom:40px;opacity:.8}
+  .foco{min-width:320px}
+  .bola-flota{opacity:.5}
+  .bola-flota.centro{display:none}
+}
+@media(max-width:699px){
+  .letrero{padding:16px 20px 18px;border-radius:18px}
+  .rejilla{gap:4px}
+  .casilla{border-radius:8px}
+  .casilla .numc{top:6px;right:7px;font-size:12px}
+  .panel{border-radius:20px 20px 0 0}
+  .panel-bola{width:52px;height:52px}
+  .resultado{padding:30px 20px 24px}
+  .tira{height:16px}
+  .estado .acciones{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .estado .btn{padding:11px 8px;font-size:10.5px;letter-spacing:.08em}
+}
+@media(max-width:360px){
+  .letrero h1{font-size:36px}
+  .casilla .numc{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){
+  .foco,.bombo *,.tablero *,.tira,
+  .cita span:first-child::before,.casilla.brilla,.velo.abierto .panel-bola,.casilla.descartada .tacha{animation:none !important}
+  .bola-flota{animation:none;bottom:auto;top:var(--y)}
+  .casilla:hover{transform:none}
+  .bb-on{animation:none !important;opacity:.6}
+  .btn-estreno{animation:none}
+}
 </style>
 </head>
-<body>
+<body class="js-on">
+<!-- Ambientación: sala de bingo. Todo decorativo, en SVG y CSS, sin canvas -->
+<svg class="defs-sala" width="0" height="0" aria-hidden="true" focusable="false"><defs>
+  <radialGradient id="bHalo"><stop offset="0" stop-color="#F2EFE6" stop-opacity=".95"/><stop offset=".28" stop-color="#DDA73E" stop-opacity=".85"/><stop offset=".6" stop-color="#DDA73E" stop-opacity=".22"/><stop offset="1" stop-color="#DDA73E" stop-opacity="0"/></radialGradient>
+  <radialGradient id="bolaSombra" cx=".38" cy=".3" r=".78"><stop offset=".55" stop-color="#171511" stop-opacity="0"/><stop offset="1" stop-color="#171511" stop-opacity=".55"/></radialGradient>
+</defs></svg>
+<div class="sala" aria-hidden="true">
+  <div class="foco f1"></div><div class="foco f2"></div><div class="foco f3"></div>
+  <div class="bola-flota" style="--x:4%;--s:54px;--d:28s;--r:-0s;--y:18%"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#DDA73E"/><circle cx="32" cy="32" r="30" fill="url(#bolaSombra)"/><circle cx="32" cy="32" r="16.2" fill="#F2EFE6"/><text x="32" y="32" class="bn" font-size="17.4">7</text><ellipse cx="21.2" cy="18.8" rx="9.0" ry="4.5" fill="rgba(242,239,230,.45)" transform="rotate(-32 21.2 18.8)"/></svg></div><div class="bola-flota centro" style="--x:14%;--s:40px;--d:34s;--r:-11s;--y:62%"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#2E7D74"/><circle cx="32" cy="32" r="30" fill="url(#bolaSombra)"/><circle cx="32" cy="32" r="16.2" fill="#F2EFE6"/><text x="32" y="32" class="bn" font-size="17.4">33</text><ellipse cx="21.2" cy="18.8" rx="9.0" ry="4.5" fill="rgba(242,239,230,.45)" transform="rotate(-32 21.2 18.8)"/></svg></div><div class="bola-flota centro" style="--x:27%;--s:46px;--d:30s;--r:-19s;--y:40%"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#B5532A"/><circle cx="32" cy="32" r="30" fill="url(#bolaSombra)"/><circle cx="32" cy="32" r="16.2" fill="#F2EFE6"/><text x="32" y="32" class="bn" font-size="17.4">61</text><ellipse cx="21.2" cy="18.8" rx="9.0" ry="4.5" fill="rgba(242,239,230,.45)" transform="rotate(-32 21.2 18.8)"/></svg></div><div class="bola-flota centro" style="--x:72%;--s:42px;--d:32s;--r:-5s;--y:30%"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#E2725B"/><circle cx="32" cy="32" r="30" fill="url(#bolaSombra)"/><circle cx="32" cy="32" r="16.2" fill="#F2EFE6"/><text x="32" y="32" class="bn" font-size="17.4">14</text><ellipse cx="21.2" cy="18.8" rx="9.0" ry="4.5" fill="rgba(242,239,230,.45)" transform="rotate(-32 21.2 18.8)"/></svg></div><div class="bola-flota centro" style="--x:84%;--s:58px;--d:26s;--r:-15s;--y:72%"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#C9A227"/><circle cx="32" cy="32" r="30" fill="url(#bolaSombra)"/><circle cx="32" cy="32" r="16.2" fill="#F2EFE6"/><text x="32" y="32" class="bn" font-size="17.4">45</text><ellipse cx="21.2" cy="18.8" rx="9.0" ry="4.5" fill="rgba(242,239,230,.45)" transform="rotate(-32 21.2 18.8)"/></svg></div><div class="bola-flota" style="--x:93%;--s:38px;--d:36s;--r:-24s;--y:50%"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#6B4C6A"/><circle cx="32" cy="32" r="30" fill="url(#bolaSombra)"/><circle cx="32" cy="32" r="16.2" fill="#F2EFE6"/><text x="32" y="32" class="bn" font-size="17.4">82</text><ellipse cx="21.2" cy="18.8" rx="9.0" ry="4.5" fill="rgba(242,239,230,.45)" transform="rotate(-32 21.2 18.8)"/></svg></div><div class="bola-flota centro" style="--x:55%;--s:34px;--d:38s;--r:-9s;--y:84%"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#DDA73E"/><circle cx="32" cy="32" r="30" fill="url(#bolaSombra)"/><circle cx="32" cy="32" r="16.2" fill="#F2EFE6"/><text x="32" y="32" class="bn" font-size="17.4">29</text><ellipse cx="21.2" cy="18.8" rx="9.0" ry="4.5" fill="rgba(242,239,230,.45)" transform="rotate(-32 21.2 18.8)"/></svg></div>
+  <svg class="tablero" viewBox="0 0 316 346" aria-hidden="true">
+  <rect x="2" y="2" width="312" height="342" rx="18" fill="rgba(30,27,23,.92)" stroke="#DDA73E" stroke-opacity=".45" stroke-width="2"/>
+  <rect x="10" y="10" width="296" height="40" rx="11" fill="#DDA73E"/>
+  <text x="158" y="31" class="tab-tit">BINGO</text>
+  <g class="tn off" style="animation-delay:-0.29s"><circle cx="30" cy="76" r="11.5"/><text x="30" y="76">1</text></g><g class="tn off" style="animation-delay:-0.58s"><circle cx="58" cy="76" r="11.5"/><text x="58" y="76">2</text></g><g class="tn on" style="animation-delay:-0.87s"><circle cx="86" cy="76" r="11.5"/><text x="86" y="76">3</text></g><g class="tn on" style="animation-delay:-1.16s"><circle cx="114" cy="76" r="11.5"/><text x="114" y="76">4</text></g><g class="tn off" style="animation-delay:-1.45s"><circle cx="142" cy="76" r="11.5"/><text x="142" y="76">5</text></g><g class="tn on" style="animation-delay:-1.74s"><circle cx="170" cy="76" r="11.5"/><text x="170" y="76">6</text></g><g class="tn off" style="animation-delay:-2.03s"><circle cx="198" cy="76" r="11.5"/><text x="198" y="76">7</text></g><g class="tn off" style="animation-delay:-2.32s"><circle cx="226" cy="76" r="11.5"/><text x="226" y="76">8</text></g><g class="tn off" style="animation-delay:-2.61s"><circle cx="254" cy="76" r="11.5"/><text x="254" y="76">9</text></g><g class="tn off" style="animation-delay:-2.90s"><circle cx="282" cy="76" r="11.5"/><text x="282" y="76">10</text></g><g class="tn on" style="animation-delay:-0.19s"><circle cx="30" cy="104" r="11.5"/><text x="30" y="104">11</text></g><g class="tn on" style="animation-delay:-0.48s"><circle cx="58" cy="104" r="11.5"/><text x="58" y="104">12</text></g><g class="tn off" style="animation-delay:-0.77s"><circle cx="86" cy="104" r="11.5"/><text x="86" y="104">13</text></g><g class="tn off" style="animation-delay:-1.06s"><circle cx="114" cy="104" r="11.5"/><text x="114" y="104">14</text></g><g class="tn off" style="animation-delay:-1.35s"><circle cx="142" cy="104" r="11.5"/><text x="142" y="104">15</text></g><g class="tn off" style="animation-delay:-1.64s"><circle cx="170" cy="104" r="11.5"/><text x="170" y="104">16</text></g><g class="tn on" style="animation-delay:-1.93s"><circle cx="198" cy="104" r="11.5"/><text x="198" y="104">17</text></g><g class="tn on" style="animation-delay:-2.22s"><circle cx="226" cy="104" r="11.5"/><text x="226" y="104">18</text></g><g class="tn off" style="animation-delay:-2.51s"><circle cx="254" cy="104" r="11.5"/><text x="254" y="104">19</text></g><g class="tn off" style="animation-delay:-2.80s"><circle cx="282" cy="104" r="11.5"/><text x="282" y="104">20</text></g><g class="tn off" style="animation-delay:-0.09s"><circle cx="30" cy="132" r="11.5"/><text x="30" y="132">21</text></g><g class="tn off" style="animation-delay:-0.38s"><circle cx="58" cy="132" r="11.5"/><text x="58" y="132">22</text></g><g class="tn off" style="animation-delay:-0.67s"><circle cx="86" cy="132" r="11.5"/><text x="86" y="132">23</text></g><g class="tn off" style="animation-delay:-0.96s"><circle cx="114" cy="132" r="11.5"/><text x="114" y="132">24</text></g><g class="tn on" style="animation-delay:-1.25s"><circle cx="142" cy="132" r="11.5"/><text x="142" y="132">25</text></g><g class="tn off" style="animation-delay:-1.54s"><circle cx="170" cy="132" r="11.5"/><text x="170" y="132">26</text></g><g class="tn on blink" style="animation-delay:-1.83s"><circle cx="198" cy="132" r="11.5"/><text x="198" y="132">27</text></g><g class="tn off" style="animation-delay:-2.12s"><circle cx="226" cy="132" r="11.5"/><text x="226" y="132">28</text></g><g class="tn off" style="animation-delay:-2.41s"><circle cx="254" cy="132" r="11.5"/><text x="254" y="132">29</text></g><g class="tn on" style="animation-delay:-2.70s"><circle cx="282" cy="132" r="11.5"/><text x="282" y="132">30</text></g><g class="tn off" style="animation-delay:-2.99s"><circle cx="30" cy="160" r="11.5"/><text x="30" y="160">31</text></g><g class="tn on" style="animation-delay:-0.28s"><circle cx="58" cy="160" r="11.5"/><text x="58" y="160">32</text></g><g class="tn off" style="animation-delay:-0.57s"><circle cx="86" cy="160" r="11.5"/><text x="86" y="160">33</text></g><g class="tn off" style="animation-delay:-0.86s"><circle cx="114" cy="160" r="11.5"/><text x="114" y="160">34</text></g><g class="tn off" style="animation-delay:-1.15s"><circle cx="142" cy="160" r="11.5"/><text x="142" y="160">35</text></g><g class="tn off" style="animation-delay:-1.44s"><circle cx="170" cy="160" r="11.5"/><text x="170" y="160">36</text></g><g class="tn off" style="animation-delay:-1.73s"><circle cx="198" cy="160" r="11.5"/><text x="198" y="160">37</text></g><g class="tn off" style="animation-delay:-2.02s"><circle cx="226" cy="160" r="11.5"/><text x="226" y="160">38</text></g><g class="tn off" style="animation-delay:-2.31s"><circle cx="254" cy="160" r="11.5"/><text x="254" y="160">39</text></g><g class="tn off" style="animation-delay:-2.60s"><circle cx="282" cy="160" r="11.5"/><text x="282" y="160">40</text></g><g class="tn off" style="animation-delay:-2.89s"><circle cx="30" cy="188" r="11.5"/><text x="30" y="188">41</text></g><g class="tn off" style="animation-delay:-0.18s"><circle cx="58" cy="188" r="11.5"/><text x="58" y="188">42</text></g><g class="tn off" style="animation-delay:-0.47s"><circle cx="86" cy="188" r="11.5"/><text x="86" y="188">43</text></g><g class="tn off" style="animation-delay:-0.76s"><circle cx="114" cy="188" r="11.5"/><text x="114" y="188">44</text></g><g class="tn off" style="animation-delay:-1.05s"><circle cx="142" cy="188" r="11.5"/><text x="142" y="188">45</text></g><g class="tn off" style="animation-delay:-1.34s"><circle cx="170" cy="188" r="11.5"/><text x="170" y="188">46</text></g><g class="tn off" style="animation-delay:-1.63s"><circle cx="198" cy="188" r="11.5"/><text x="198" y="188">47</text></g><g class="tn on" style="animation-delay:-1.92s"><circle cx="226" cy="188" r="11.5"/><text x="226" y="188">48</text></g><g class="tn on" style="animation-delay:-2.21s"><circle cx="254" cy="188" r="11.5"/><text x="254" y="188">49</text></g><g class="tn on blink" style="animation-delay:-2.50s"><circle cx="282" cy="188" r="11.5"/><text x="282" y="188">50</text></g><g class="tn off" style="animation-delay:-2.79s"><circle cx="30" cy="216" r="11.5"/><text x="30" y="216">51</text></g><g class="tn on" style="animation-delay:-0.08s"><circle cx="58" cy="216" r="11.5"/><text x="58" y="216">52</text></g><g class="tn off" style="animation-delay:-0.37s"><circle cx="86" cy="216" r="11.5"/><text x="86" y="216">53</text></g><g class="tn off" style="animation-delay:-0.66s"><circle cx="114" cy="216" r="11.5"/><text x="114" y="216">54</text></g><g class="tn off" style="animation-delay:-0.95s"><circle cx="142" cy="216" r="11.5"/><text x="142" y="216">55</text></g><g class="tn off" style="animation-delay:-1.24s"><circle cx="170" cy="216" r="11.5"/><text x="170" y="216">56</text></g><g class="tn off" style="animation-delay:-1.53s"><circle cx="198" cy="216" r="11.5"/><text x="198" y="216">57</text></g><g class="tn off" style="animation-delay:-1.82s"><circle cx="226" cy="216" r="11.5"/><text x="226" y="216">58</text></g><g class="tn on" style="animation-delay:-2.11s"><circle cx="254" cy="216" r="11.5"/><text x="254" y="216">59</text></g><g class="tn off" style="animation-delay:-2.40s"><circle cx="282" cy="216" r="11.5"/><text x="282" y="216">60</text></g><g class="tn off" style="animation-delay:-2.69s"><circle cx="30" cy="244" r="11.5"/><text x="30" y="244">61</text></g><g class="tn off" style="animation-delay:-2.98s"><circle cx="58" cy="244" r="11.5"/><text x="58" y="244">62</text></g><g class="tn on blink" style="animation-delay:-0.27s"><circle cx="86" cy="244" r="11.5"/><text x="86" y="244">63</text></g><g class="tn on" style="animation-delay:-0.56s"><circle cx="114" cy="244" r="11.5"/><text x="114" y="244">64</text></g><g class="tn on" style="animation-delay:-0.85s"><circle cx="142" cy="244" r="11.5"/><text x="142" y="244">65</text></g><g class="tn off" style="animation-delay:-1.14s"><circle cx="170" cy="244" r="11.5"/><text x="170" y="244">66</text></g><g class="tn off" style="animation-delay:-1.43s"><circle cx="198" cy="244" r="11.5"/><text x="198" y="244">67</text></g><g class="tn off" style="animation-delay:-1.72s"><circle cx="226" cy="244" r="11.5"/><text x="226" y="244">68</text></g><g class="tn off" style="animation-delay:-2.01s"><circle cx="254" cy="244" r="11.5"/><text x="254" y="244">69</text></g><g class="tn off" style="animation-delay:-2.30s"><circle cx="282" cy="244" r="11.5"/><text x="282" y="244">70</text></g><g class="tn off" style="animation-delay:-2.59s"><circle cx="30" cy="272" r="11.5"/><text x="30" y="272">71</text></g><g class="tn off" style="animation-delay:-2.88s"><circle cx="58" cy="272" r="11.5"/><text x="58" y="272">72</text></g><g class="tn off" style="animation-delay:-0.17s"><circle cx="86" cy="272" r="11.5"/><text x="86" y="272">73</text></g><g class="tn off" style="animation-delay:-0.46s"><circle cx="114" cy="272" r="11.5"/><text x="114" y="272">74</text></g><g class="tn off" style="animation-delay:-0.75s"><circle cx="142" cy="272" r="11.5"/><text x="142" y="272">75</text></g><g class="tn on" style="animation-delay:-1.04s"><circle cx="170" cy="272" r="11.5"/><text x="170" y="272">76</text></g><g class="tn on" style="animation-delay:-1.33s"><circle cx="198" cy="272" r="11.5"/><text x="198" y="272">77</text></g><g class="tn off" style="animation-delay:-1.62s"><circle cx="226" cy="272" r="11.5"/><text x="226" y="272">78</text></g><g class="tn on" style="animation-delay:-1.91s"><circle cx="254" cy="272" r="11.5"/><text x="254" y="272">79</text></g><g class="tn off" style="animation-delay:-2.20s"><circle cx="282" cy="272" r="11.5"/><text x="282" y="272">80</text></g><g class="tn off" style="animation-delay:-2.49s"><circle cx="30" cy="300" r="11.5"/><text x="30" y="300">81</text></g><g class="tn off" style="animation-delay:-2.78s"><circle cx="58" cy="300" r="11.5"/><text x="58" y="300">82</text></g><g class="tn off" style="animation-delay:-0.07s"><circle cx="86" cy="300" r="11.5"/><text x="86" y="300">83</text></g><g class="tn off" style="animation-delay:-0.36s"><circle cx="114" cy="300" r="11.5"/><text x="114" y="300">84</text></g><g class="tn off" style="animation-delay:-0.65s"><circle cx="142" cy="300" r="11.5"/><text x="142" y="300">85</text></g><g class="tn on blink" style="animation-delay:-0.94s"><circle cx="170" cy="300" r="11.5"/><text x="170" y="300">86</text></g><g class="tn off" style="animation-delay:-1.23s"><circle cx="198" cy="300" r="11.5"/><text x="198" y="300">87</text></g><g class="tn off" style="animation-delay:-1.52s"><circle cx="226" cy="300" r="11.5"/><text x="226" y="300">88</text></g><g class="tn off" style="animation-delay:-1.81s"><circle cx="254" cy="300" r="11.5"/><text x="254" y="300">89</text></g><g class="tn on" style="animation-delay:-2.10s"><circle cx="282" cy="300" r="11.5"/><text x="282" y="300">90</text></g>
+</svg>
+  <svg class="bombo" viewBox="0 0 420 480" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+  <ellipse cx="210" cy="462" rx="170" ry="14" fill="rgba(0,0,0,.45)"/>
+  <path d="M150 414 L210 214 L270 414" fill="none" stroke="#DDA73E" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/>
+  <path d="M104 456 L316 456 L292 418 L128 418 Z" fill="#1E1B17" stroke="#DDA73E" stroke-opacity=".6" stroke-width="2"/>
+  <circle class="bb impar" cx="128" cy="440" r="4.2"/><circle class="bb par" cx="151" cy="440" r="4.2"/><circle class="bb impar" cx="174" cy="440" r="4.2"/><circle class="bb par" cx="197" cy="440" r="4.2"/><circle class="bb impar" cx="220" cy="440" r="4.2"/><circle class="bb par" cx="243" cy="440" r="4.2"/><circle class="bb impar" cx="266" cy="440" r="4.2"/><circle class="bb par" cx="289" cy="440" r="4.2"/>
+  <circle cx="210" cy="210" r="160" fill="rgba(221,167,62,.05)"/>
+  <clipPath id="dentroBombo"><circle cx="210" cy="210" r="152"/></clipPath>
+  <g clip-path="url(#dentroBombo)"><g class="revuelve"><g transform="translate(0 0)"><g class="salta" style="animation-delay:-0.00s"><circle cx="150" cy="322" r="19" fill="#DDA73E"/><circle cx="150" cy="322" r="19" fill="url(#bolaSombra)"/><circle cx="150" cy="322" r="10.3" fill="#F2EFE6"/><text x="150" y="322" class="bn" font-size="11.0">7</text><ellipse cx="143.2" cy="313.6" rx="5.7" ry="2.9" fill="rgba(242,239,230,.45)" transform="rotate(-32 143.2 313.6)"/></g></g><g transform="translate(0 0)"><g class="salta" style="animation-delay:-0.37s"><circle cx="190" cy="338" r="19" fill="#B5532A"/><circle cx="190" cy="338" r="19" fill="url(#bolaSombra)"/><circle cx="190" cy="338" r="10.3" fill="#F2EFE6"/><text x="190" y="338" class="bn" font-size="11.0">23</text><ellipse cx="183.2" cy="329.6" rx="5.7" ry="2.9" fill="rgba(242,239,230,.45)" transform="rotate(-32 183.2 329.6)"/></g></g><g transform="translate(0 0)"><g class="salta" style="animation-delay:-0.74s"><circle cx="232" cy="334" r="19" fill="#C9A227"/><circle cx="232" cy="334" r="19" fill="url(#bolaSombra)"/><circle cx="232" cy="334" r="10.3" fill="#F2EFE6"/><text x="232" y="334" class="bn" font-size="11.0">41</text><ellipse cx="225.2" cy="325.6" rx="5.7" ry="2.9" fill="rgba(242,239,230,.45)" transform="rotate(-32 225.2 325.6)"/></g></g><g transform="translate(0 0)"><g class="salta" style="animation-delay:-1.11s"><circle cx="272" cy="316" r="19" fill="#2E7D74"/><circle cx="272" cy="316" r="19" fill="url(#bolaSombra)"/><circle cx="272" cy="316" r="10.3" fill="#F2EFE6"/><text x="272" y="316" class="bn" font-size="11.0">58</text><ellipse cx="265.2" cy="307.6" rx="5.7" ry="2.9" fill="rgba(242,239,230,.45)" transform="rotate(-32 265.2 307.6)"/></g></g><g transform="translate(0 0)"><g class="salta" style="animation-delay:-1.48s"><circle cx="126" cy="290" r="19" fill="#E2725B"/><circle cx="126" cy="290" r="19" fill="url(#bolaSombra)"/><circle cx="126" cy="290" r="10.3" fill="#F2EFE6"/><text x="126" y="290" class="bn" font-size="11.0">12</text><ellipse cx="119.2" cy="281.6" rx="5.7" ry="2.9" fill="rgba(242,239,230,.45)" transform="rotate(-32 119.2 281.6)"/></g></g><g transform="translate(0 0)"><g class="salta" style="animation-delay:-1.85s"><circle cx="168" cy="296" r="19" fill="#DDA73E"/><circle cx="168" cy="296" r="19" fill="url(#bolaSombra)"/><circle cx="168" cy="296" r="10.3" fill="#F2EFE6"/><text x="168" y="296" class="bn" font-size="11.0">66</text><ellipse cx="161.2" cy="287.6" rx="5.7" ry="2.9" fill="rgba(242,239,230,.45)" transform="rotate(-32 161.2 287.6)"/></g></g><g transform="translate(0 0)"><g class="salta" style="animation-delay:-0.22s"><circle cx="210" cy="300" r="19" fill="#B5532A"/><circle cx="210" cy="300" r="19" fill="url(#bolaSombra)"/><circle cx="210" cy="300" r="10.3" fill="#F2EFE6"/><text x="210" y="300" class="bn" font-size="11.0">3</text><ellipse cx="203.2" cy="291.6" rx="5.7" ry="2.9" fill="rgba(242,239,230,.45)" transform="rotate(-32 203.2 291.6)"/></g></g><g transform="translate(0 0)"><g class="salta" style="animation-delay:-0.59s"><circle cx="252" cy="286" r="19" fill="#6B4C6A"/><circle cx="252" cy="286" r="19" fill="url(#bolaSombra)"/><circle cx="252" cy="286" r="10.3" fill="#F2EFE6"/><text x="252" y="286" class="bn" font-size="11.0">80</text><ellipse cx="245.2" cy="277.6" rx="5.7" ry="2.9" fill="rgba(242,239,230,.45)" transform="rotate(-32 245.2 277.6)"/></g></g><g transform="translate(0 0)"><g class="salta" style="animation-delay:-0.96s"><circle cx="292" cy="280" r="19" fill="#DDA73E"/><circle cx="292" cy="280" r="19" fill="url(#bolaSombra)"/><circle cx="292" cy="280" r="10.3" fill="#F2EFE6"/><text x="292" y="280" class="bn" font-size="11.0">35</text><ellipse cx="285.2" cy="271.6" rx="5.7" ry="2.9" fill="rgba(242,239,230,.45)" transform="rotate(-32 285.2 271.6)"/></g></g><g transform="translate(0 0)"><g class="salta" style="animation-delay:-1.33s"><circle cx="188" cy="262" r="19" fill="#2E7D74"/><circle cx="188" cy="262" r="19" fill="url(#bolaSombra)"/><circle cx="188" cy="262" r="10.3" fill="#F2EFE6"/><text x="188" y="262" class="bn" font-size="11.0">19</text><ellipse cx="181.2" cy="253.6" rx="5.7" ry="2.9" fill="rgba(242,239,230,.45)" transform="rotate(-32 181.2 253.6)"/></g></g><g transform="translate(0 0)"><g class="salta" style="animation-delay:-1.70s"><circle cx="230" cy="258" r="19" fill="#E2725B"/><circle cx="230" cy="258" r="19" fill="url(#bolaSombra)"/><circle cx="230" cy="258" r="10.3" fill="#F2EFE6"/><text x="230" y="258" class="bn" font-size="11.0">54</text><ellipse cx="223.2" cy="249.6" rx="5.7" ry="2.9" fill="rgba(242,239,230,.45)" transform="rotate(-32 223.2 249.6)"/></g></g><g transform="translate(0 0)"><g class="salta" style="animation-delay:-0.07s"><circle cx="148" cy="256" r="19" fill="#C9A227"/><circle cx="148" cy="256" r="19" fill="url(#bolaSombra)"/><circle cx="148" cy="256" r="10.3" fill="#F2EFE6"/><text x="148" y="256" class="bn" font-size="11.0">71</text><ellipse cx="141.2" cy="247.6" rx="5.7" ry="2.9" fill="rgba(242,239,230,.45)" transform="rotate(-32 141.2 247.6)"/></g></g></g><g class="vuela v1"><circle cx="178" cy="170" r="17" fill="#DDA73E"/><circle cx="178" cy="170" r="17" fill="url(#bolaSombra)"/><circle cx="178" cy="170" r="9.2" fill="#F2EFE6"/><text x="178" y="170" class="bn" font-size="9.9">88</text><ellipse cx="171.9" cy="162.5" rx="5.1" ry="2.5" fill="rgba(242,239,230,.45)" transform="rotate(-32 171.9 162.5)"/></g><g class="vuela v2"><circle cx="250" cy="150" r="17" fill="#B5532A"/><circle cx="250" cy="150" r="17" fill="url(#bolaSombra)"/><circle cx="250" cy="150" r="9.2" fill="#F2EFE6"/><text x="250" y="150" class="bn" font-size="9.9">46</text><ellipse cx="243.9" cy="142.5" rx="5.1" ry="2.5" fill="rgba(242,239,230,.45)" transform="rotate(-32 243.9 142.5)"/></g></g>
+  <g class="jaula">
+    <circle cx="210" cy="210" r="160" fill="none" stroke="#DDA73E" stroke-width="3.2" vector-effect="non-scaling-stroke"/>
+    <ellipse cx="210" cy="210" rx="126" ry="160" fill="none" stroke="#DDA73E" stroke-width="1.6" opacity=".55" vector-effect="non-scaling-stroke"/><ellipse cx="210" cy="210" rx="84" ry="160" fill="none" stroke="#DDA73E" stroke-width="1.6" opacity=".55" vector-effect="non-scaling-stroke"/><ellipse cx="210" cy="210" rx="40" ry="160" fill="none" stroke="#DDA73E" stroke-width="1.6" opacity=".55" vector-effect="non-scaling-stroke"/><ellipse cx="210" cy="210" rx="160" ry="70" fill="none" stroke="#DDA73E" stroke-width="1.2" opacity=".35" vector-effect="non-scaling-stroke"/><ellipse cx="210" cy="210" rx="160" ry="128" fill="none" stroke="#DDA73E" stroke-width="1.2" opacity=".35" vector-effect="non-scaling-stroke"/>
+    <line x1="50" y1="210" x2="370" y2="210" stroke="#DDA73E" stroke-width="1.4" opacity=".5"/>
+    <path d="M178 58 A160 160 0 0 1 242 58" fill="none" stroke="#F2EFE6" stroke-width="5" stroke-linecap="round" opacity=".55"/>
+    <g class="manivela"><line x1="210" y1="210" x2="262" y2="262" stroke="#F2EFE6" stroke-width="5" stroke-linecap="round" opacity=".8"/><circle cx="266" cy="266" r="9" fill="#B5532A"/></g>
+  </g>
+  <circle cx="210" cy="210" r="13" fill="#DDA73E"/><circle cx="210" cy="210" r="5" fill="#171511"/>
+  <path d="M92 128 A150 150 0 0 1 178 66" fill="none" stroke="rgba(242,239,230,.28)" stroke-width="6" stroke-linecap="round"/>
+  <path d="M338 300 Q372 330 380 372 L398 400" fill="none" stroke="#DDA73E" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+  <g class="sale"><circle cx="388" cy="388" r="16" fill="#2E7D74"/><circle cx="388" cy="388" r="16" fill="url(#bolaSombra)"/><circle cx="388" cy="388" r="8.6" fill="#F2EFE6"/><text x="388" y="388" class="bn" font-size="9.3">27</text><ellipse cx="382.2" cy="381.0" rx="4.8" ry="2.4" fill="rgba(242,239,230,.45)" transform="rotate(-32 382.2 381.0)"/></g>
+</svg>
+</div>
+<div class="tira arriba" aria-hidden="true"></div>
+<div class="tira abajo" aria-hidden="true"></div>
+
 
 <div class="wrap">
   <header>
     <p class="eyebrow">Singular Club · Antes del directo</p>
-    <h1>Bingo Singular</h1>
+    <div class="letrero luces"><h1>Bingo Singular</h1></div>
     <p class="lede">16 situaciones que muchas personas autistas reconocen. Toca cada casilla para ver por qué pasa y marca las que te pasan a ti. Al terminar verás cuál es tu gran problema.</p>
     <p class="cita"><span>Directo en YouTube</span><span><b>Jueves 8 de octubre</b></span><span><b>19:00</b> hora española</span></p>
+    <p class="estreno-wrap"><a class="btn pri btn-estreno" id="btnEstreno" target="_blank" rel="noopener" hidden><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.8v8.4L10 6z" fill="currentColor"/></svg><span id="btnEstrenoTxt">Ir al estreno en YouTube</span></a></p>
   </header>
 
   <main>
-    <section class="carton item" aria-label="Cartón del Bingo Singular">
+    <section class="carton luces item in" aria-label="Cartón del Bingo Singular">
       <div class="carton-cab"><span class="nombre">Bingo Singular</span><span>Cartón 4×4</span></div>
-      <div class="rejilla" id="rejilla"></div>
+      <div class="rejilla" id="rejilla"><button type="button" class="casilla marcada vista" data-id="1" data-pos="0" aria-pressed="true" aria-label="Le doy vueltas a una conversación días después. Marcada."><span class="sello"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 8c12 0 21 4 29 11s13 18 13 31c0 12-4 22-12 30s-18 12-30 12c-12 0-22-4-30-12S8 62 8 50c0-12 4-22 12-30S38 8 50 8z" fill="none" stroke="rgba(23,21,17,.28)" stroke-width="2.4" vector-effect="non-scaling-stroke"></path></svg></span><span class="leida" aria-hidden="true"></span><span class="txt">Repaso charlas días después</span></button><button type="button" class="casilla vista" data-id="9" data-pos="1" aria-pressed="false" aria-label="Después de quedar con gente necesito un día entero para recuperarme."><span class="sello"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 8c12 0 21 4 29 11s13 18 13 31c0 12-4 22-12 30s-18 12-30 12c-12 0-22-4-30-12S8 62 8 50c0-12 4-22 12-30S38 8 50 8z" fill="none" stroke="rgba(23,21,17,.28)" stroke-width="2.4" vector-effect="non-scaling-stroke"></path></svg></span><span class="leida" aria-hidden="true"></span><span class="txt">Tras quedar, un día para recuperarme</span></button><button type="button" class="casilla vista" data-id="5" data-pos="2" aria-pressed="false" aria-label="Recibí el diagnóstico y no supe qué hacer con él."><span class="sello"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 8c12 0 21 4 29 11s13 18 13 31c0 12-4 22-12 30s-18 12-30 12c-12 0-22-4-30-12S8 62 8 50c0-12 4-22 12-30S38 8 50 8z" fill="none" stroke="rgba(23,21,17,.28)" stroke-width="2.4" vector-effect="non-scaling-stroke"></path></svg></span><span class="leida" aria-hidden="true"></span><span class="txt">Diagnóstico, ¿y ahora qué?</span></button><button type="button" class="casilla vista" data-id="13" data-pos="3" aria-pressed="false" aria-label="Me muerdo las uñas o la piel sin darme cuenta."><span class="sello"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 8c12 0 21 4 29 11s13 18 13 31c0 12-4 22-12 30s-18 12-30 12c-12 0-22-4-30-12S8 62 8 50c0-12 4-22 12-30S38 8 50 8z" fill="none" stroke="rgba(23,21,17,.28)" stroke-width="2.4" vector-effect="non-scaling-stroke"></path></svg></span><span class="leida" aria-hidden="true"></span><span class="txt">Me muerdo uñas o piel sin darme cuenta</span></button><button type="button" class="casilla marcada vista" data-id="10" data-pos="4" aria-pressed="true" aria-label="Ensayo las conversaciones antes de tenerlas. Marcada."><span class="sello"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 8c12 0 21 4 29 11s13 18 13 31c0 12-4 22-12 30s-18 12-30 12c-12 0-22-4-30-12S8 62 8 50c0-12 4-22 12-30S38 8 50 8z" fill="none" stroke="rgba(23,21,17,.28)" stroke-width="2.4" vector-effect="non-scaling-stroke"></path></svg></span><span class="leida" aria-hidden="true"></span><span class="txt">Ensayo lo que voy a decir</span></button><button type="button" class="casilla vista" data-id="6" data-pos="5" aria-pressed="false" aria-label="Me cuesta decir «soy autista» en voz alta."><span class="sello"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 8c12 0 21 4 29 11s13 18 13 31c0 12-4 22-12 30s-18 12-30 12c-12 0-22-4-30-12S8 62 8 50c0-12 4-22 12-30S38 8 50 8z" fill="none" stroke="rgba(23,21,17,.28)" stroke-width="2.4" vector-effect="non-scaling-stroke"></path></svg></span><span class="leida" aria-hidden="true"></span><span class="txt">Me cuesta decir «soy autista»</span></button><button type="button" class="casilla vista" data-id="14" data-pos="6" aria-pressed="false" aria-label="Paso horas sentado sin notar el cuerpo."><span class="sello"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 8c12 0 21 4 29 11s13 18 13 31c0 12-4 22-12 30s-18 12-30 12c-12 0-22-4-30-12S8 62 8 50c0-12 4-22 12-30S38 8 50 8z" fill="none" stroke="rgba(23,21,17,.28)" stroke-width="2.4" vector-effect="non-scaling-stroke"></path></svg></span><span class="leida" aria-hidden="true"></span><span class="txt">Horas sentado sin notar el cuerpo</span></button><button type="button" class="casilla marcada vista" data-id="2" data-pos="7" aria-pressed="true" aria-label="Puedo pasar horas con un tema y olvidarme de comer. Marcada."><span class="sello"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 8c12 0 21 4 29 11s13 18 13 31c0 12-4 22-12 30s-18 12-30 12c-12 0-22-4-30-12S8 62 8 50c0-12 4-22 12-30S38 8 50 8z" fill="none" stroke="rgba(23,21,17,.28)" stroke-width="2.4" vector-effect="non-scaling-stroke"></path></svg></span><span class="leida" aria-hidden="true"></span><span class="txt">Horas con un tema, sin comer</span></button><button type="button" class="casilla marcada vista" data-id="7" data-pos="8" aria-pressed="true" aria-label="No sé qué partes de mí son yo y cuáles son el autismo. Marcada."><span class="sello"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 8c12 0 21 4 29 11s13 18 13 31c0 12-4 22-12 30s-18 12-30 12c-12 0-22-4-30-12S8 62 8 50c0-12 4-22 12-30S38 8 50 8z" fill="none" stroke="rgba(23,21,17,.28)" stroke-width="2.4" vector-effect="non-scaling-stroke"></path></svg></span><span class="leida" aria-hidden="true"></span><span class="txt">¿Esto soy yo o es el autismo?</span></button><button type="button" class="casilla vista" data-id="15" data-pos="9" aria-pressed="false" aria-label="Me cuesta muchísimo empezar a moverme o hacer deporte."><span class="sello"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 8c12 0 21 4 29 11s13 18 13 31c0 12-4 22-12 30s-18 12-30 12c-12 0-22-4-30-12S8 62 8 50c0-12 4-22 12-30S38 8 50 8z" fill="none" stroke="rgba(23,21,17,.28)" stroke-width="2.4" vector-effect="non-scaling-stroke"></path></svg></span><span class="leida" aria-hidden="true"></span><span class="txt">Me cuesta empezar a moverme</span></button><button type="button" class="casilla marcada vista" data-id="3" data-pos="10" aria-pressed="true" aria-label="Sé lo que tengo que hacer y no consigo empezar. Marcada."><span class="sello"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 8c12 0 21 4 29 11s13 18 13 31c0 12-4 22-12 30s-18 12-30 12c-12 0-22-4-30-12S8 62 8 50c0-12 4-22 12-30S38 8 50 8z" fill="none" stroke="rgba(23,21,17,.28)" stroke-width="2.4" vector-effect="non-scaling-stroke"></path></svg></span><span class="leida" aria-hidden="true"></span><span class="txt">Sé qué hacer y no empiezo</span></button><button type="button" class="casilla vista" data-id="11" data-pos="11" aria-pressed="false" aria-label="En un grupo no sé cuándo me toca hablar."><span class="sello"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 8c12 0 21 4 29 11s13 18 13 31c0 12-4 22-12 30s-18 12-30 12c-12 0-22-4-30-12S8 62 8 50c0-12 4-22 12-30S38 8 50 8z" fill="none" stroke="rgba(23,21,17,.28)" stroke-width="2.4" vector-effect="non-scaling-stroke"></path></svg></span><span class="leida" aria-hidden="true"></span><span class="txt">En grupo no sé cuándo hablar</span></button><button type="button" class="casilla vista" data-id="16" data-pos="12" aria-pressed="false" aria-label="Me han pedido que deje de moverme porque molesto."><span class="sello"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 8c12 0 21 4 29 11s13 18 13 31c0 12-4 22-12 30s-18 12-30 12c-12 0-22-4-30-12S8 62 8 50c0-12 4-22 12-30S38 8 50 8z" fill="none" stroke="rgba(23,21,17,.28)" stroke-width="2.4" vector-effect="non-scaling-stroke"></path></svg></span><span class="leida" aria-hidden="true"></span><span class="txt">Me dicen que deje de moverme</span></button><button type="button" class="casilla vista" data-id="4" data-pos="13" aria-pressed="false" aria-label="Me preguntan cómo estoy y no sé qué contestar."><span class="sello"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 8c12 0 21 4 29 11s13 18 13 31c0 12-4 22-12 30s-18 12-30 12c-12 0-22-4-30-12S8 62 8 50c0-12 4-22 12-30S38 8 50 8z" fill="none" stroke="rgba(23,21,17,.28)" stroke-width="2.4" vector-effect="non-scaling-stroke"></path></svg></span><span class="leida" aria-hidden="true"></span><span class="txt">«¿Cómo estás?» y me quedo en blanco</span></button><button type="button" class="casilla marcada vista" data-id="12" data-pos="14" aria-pressed="true" aria-label="Me han dicho «pues no lo pareces». Marcada."><span class="sello"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 8c12 0 21 4 29 11s13 18 13 31c0 12-4 22-12 30s-18 12-30 12c-12 0-22-4-30-12S8 62 8 50c0-12 4-22 12-30S38 8 50 8z" fill="none" stroke="rgba(23,21,17,.28)" stroke-width="2.4" vector-effect="non-scaling-stroke"></path></svg></span><span class="leida" aria-hidden="true"></span><span class="txt">«Pues no lo pareces»</span></button><button type="button" class="casilla marcada vista" data-id="8" data-pos="15" aria-pressed="true" aria-label="Alguien cercano no se cree mi diagnóstico. Marcada."><span class="sello"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 8c12 0 21 4 29 11s13 18 13 31c0 12-4 22-12 30s-18 12-30 12c-12 0-22-4-30-12S8 62 8 50c0-12 4-22 12-30S38 8 50 8z" fill="none" stroke="rgba(23,21,17,.28)" stroke-width="2.4" vector-effect="non-scaling-stroke"></path></svg></span><span class="leida" aria-hidden="true"></span><span class="txt">Alguien no se cree mi diagnóstico</span></button></div>
       <noscript><p class="noscript">El bingo necesita JavaScript para funcionar. Ábrelo en el navegador del móvil o del ordenador.</p></noscript>
     </section>
 
-    <div class="estado item">
-      <p class="contador" aria-live="polite"><b id="cuenta">0</b>de 16 marcadas</p>
+    <div class="estado item in">
+      <p class="contador" aria-live="polite"><b id="cuenta">7</b>de 16 marcadas</p>
       <div class="acciones">
         <button class="btn" id="reiniciar" type="button">Empezar de nuevo</button>
-        <button class="btn pri" id="verResultado" type="button" disabled>Ver mi resultado</button>
+        <button class="btn pri" id="verResultado" type="button">Ver mi resultado</button>
       </div>
     </div>
-    <p class="ayuda" id="ayuda">Marca al menos una casilla para ver tu resultado.</p>
+    <p class="ayuda" id="ayuda">Has abierto las 16 casillas.</p>
 
-    <section class="resultado" id="resultado" aria-live="polite"></section>
+    <section class="resultado luces" id="resultado" aria-live="polite"></section>
   </main>
 
   <footer>
@@ -350,8 +742,9 @@ footer{border-top:1px solid var(--line);padding:26px 0 66px;margin-top:40px}
 <div class="velo" id="velo" aria-hidden="true">
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="panelTit">
     <button class="cerrar" id="cerrar" type="button" aria-label="Cerrar">
-      <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>
+      <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" vector-effect="non-scaling-stroke"></path></svg>
     </button>
+    <div class="panel-bola" aria-hidden="true"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#DDA73E"/><circle cx="32" cy="32" r="30" fill="url(#bolaSombra)"/><circle cx="32" cy="32" r="16.2" fill="#F2EFE6"/><text x="32" y="32" class="bn" font-size="17.4" id="panelBolaN">1</text><ellipse cx="21.2" cy="18.8" rx="9" ry="4.5" fill="rgba(242,239,230,.45)" transform="rotate(-32 21.2 18.8)"/></svg></div>
     <p class="num" id="panelNum"></p>
     <h2 id="panelTit"></h2>
     <p id="panelTxt"></p>
@@ -368,14 +761,17 @@ footer{border-top:1px solid var(--line);padding:26px 0 66px;margin-top:40px}
 <script>
 /* ---------------------------------------------------------------------------
    DIRECTO · datos del directo
-   youtube: enlace del directo programado. Vacío = no se muestra el botón.
+   youtube: enlace del directo programado. Lo usan el botón «Ir al estreno
+            en YouTube» de la cabecera y el botón del resultado. Mientras
+            esté vacío, el de la cabecera sale apagado con «Enlace al estreno,
+            muy pronto» y el del resultado no sale.
    inicioUTC / finUTC: para el calendario. 19:00 en Madrid en octubre es
    17:00 UTC.
 --------------------------------------------------------------------------- */
 const DIRECTO = {
   titulo: 'Directo de Singular Club',
   cuando: 'Jueves 8 de octubre, 19:00 hora española',
-  youtube: 'https://tinyurl.com/DirectoApertura',
+  youtube: 'https://www.youtube.com/watch?v=-NMJI54Tbdw',
   inicioUTC: '20261008T170000Z',
   finUTC: '20261008T180000Z'
 };
@@ -400,55 +796,55 @@ const GRUPOS = [
    por (explicación del reverso)
 --------------------------------------------------------------------------- */
 const CASILLAS = [
-  { id:1,  g:'mente', corto:'Repaso charlas días después',
+  { id:1,  g:'mente', corto:'Le doy vueltas a una charla días después',
     frase:'Le doy vueltas a una conversación días después.',
     por:'Tu cabeza no archiva una conversación hasta entender qué pasó en ella. Si algo quedó ambiguo, la vuelve a abrir una y otra vez. Eso se llama rumiación y se puede trabajar.' },
-  { id:2,  g:'mente', corto:'Horas con un tema, sin comer',
+  { id:2,  g:'mente', corto:'Me olvido de comer por estar con un tema',
     frase:'Puedo pasar horas con un tema y olvidarme de comer.',
     por:'Cuando algo te interesa, la atención se estrecha y deja fuera casi todo lo demás, incluidas las señales del cuerpo. Es el hiperfoco. Da mucho y también cobra.' },
-  { id:3,  g:'mente', corto:'Sé qué hacer y no empiezo',
+  { id:3,  g:'mente', corto:'Sé qué tengo que hacer y no empiezo',
     frase:'Sé lo que tengo que hacer y no consigo empezar.',
     por:'No es pereza. Cambiar de una actividad a otra cuesta más energía de la que se ve desde fuera, y a veces el arranque no llega. Se conoce como inercia autista.' },
-  { id:4,  g:'mente', corto:'«¿Cómo estás?» y me quedo en blanco',
+  { id:4,  g:'mente', corto:'Me preguntan cómo estoy y me quedo en blanco',
     frase:'Me preguntan cómo estoy y no sé qué contestar.',
     por:'Notar que algo pasa por dentro y ponerle nombre son dos pasos distintos. Muchas personas autistas se atascan en el segundo. Se llama alexitimia y no significa que no sientas.' },
 
-  { id:5,  g:'diagnostico', corto:'Diagnóstico, ¿y ahora qué?',
+  { id:5,  g:'diagnostico', corto:'Tengo el diagnóstico y no sé qué hacer con él',
     frase:'Recibí el diagnóstico y no supe qué hacer con él.',
     por:'Un diagnóstico explica el pasado de golpe, pero no trae instrucciones para el presente. Pasar por alivio, rabia y confusión, a veces en la misma semana, es habitual.' },
   { id:6,  g:'diagnostico', corto:'Me cuesta decir «soy autista»',
     frase:'Me cuesta decir «soy autista» en voz alta.',
     por:'La palabra arrastra ideas ajenas que no te describen. Hasta que construyes tu propia definición, decirla en voz alta parece aceptar la de los demás.' },
-  { id:7,  g:'diagnostico', corto:'¿Esto soy yo o es el autismo?',
+  { id:7,  g:'diagnostico', corto:'No sé qué parte de mí es el autismo',
     frase:'No sé qué partes de mí son yo y cuáles son el autismo.',
     por:'Después de años adaptándote, cuesta separar lo que eres de lo que aprendiste a hacer para encajar. Hacerse esa pregunta ya es el primer paso para responderla.' },
-  { id:8,  g:'diagnostico', corto:'Alguien no se cree mi diagnóstico',
+  { id:8,  g:'diagnostico', corto:'Alguien cercano no se cree mi diagnóstico',
     frase:'Alguien cercano no se cree mi diagnóstico.',
     por:'Mucha gente solo conoce una imagen del autismo, y si no la ve en ti, duda. Esa duda habla de la imagen que tiene, no de ti.' },
 
-  { id:9,  g:'social', corto:'Tras quedar, un día para recuperarme',
+  { id:9,  g:'social', corto:'Después de quedar necesito un día para recupe\u00ADrarme',
     frase:'Después de quedar con gente necesito un día entero para recuperarme.',
     por:'En una quedada procesas a mano lo que otros procesan en automático. Tono, caras, turnos, ruido. Ese trabajo se paga después, en forma de cansancio.' },
-  { id:10, g:'social', corto:'Ensayo lo que voy a decir',
+  { id:10, g:'social', corto:'Ensayo lo que voy a decir antes de hablar',
     frase:'Ensayo las conversaciones antes de tenerlas.',
     por:'Ensayar reduce la incertidumbre. Llevas el guion preparado porque improvisar en tiempo real consume más energía. Funciona, pero también tiene un coste.' },
-  { id:11, g:'social', corto:'En grupo no sé cuándo hablar',
+  { id:11, g:'social', corto:'En un grupo no sé cuándo me toca hablar',
     frase:'En un grupo no sé cuándo me toca hablar.',
     por:'Los turnos de palabra se marcan con señales muy pequeñas. Una pausa, una mirada, un cambio de tono. Si no te llegan a tiempo, entras tarde o no entras.' },
-  { id:12, g:'social', corto:'«Pues no lo pareces»',
+  { id:12, g:'social', corto:'Me han dicho «pues no lo pareces»',
     frase:'Me han dicho «pues no lo pareces».',
     por:'Suele significar que has aprendido a disimular muy bien. A eso se le llama masking. Desde fuera no se ve, y por dentro es de lo que más agota.' },
 
-  { id:13, g:'cuerpo', corto:'Me muerdo uñas o piel sin darme cuenta',
+  { id:13, g:'cuerpo', corto:'Me muerdo las uñas o la piel sin darme cuenta',
     frase:'Me muerdo las uñas o la piel sin darme cuenta.',
     por:'Es un stimming, una forma de regular la tensión o la sobrecarga. Cumple una función real, por eso no basta con que te digan que pares. Se puede sustituir por otro que no te haga daño.' },
-  { id:14, g:'cuerpo', corto:'Horas sentado sin notar el cuerpo',
+  { id:14, g:'cuerpo', corto:'Paso horas sentado sin notar mi cuerpo',
     frase:'Paso horas sentado sin notar el cuerpo.',
     por:'Con la cabeza a pleno rendimiento, las señales del cuerpo llegan flojas o no llegan. La rigidez, la sed o el cansancio se notan cuando ya son grandes. Tiene que ver con la interocepción.' },
-  { id:15, g:'cuerpo', corto:'Me cuesta empezar a moverme',
+  { id:15, g:'cuerpo', corto:'Me cuesta empezar a moverme o hacer deporte',
     frase:'Me cuesta muchísimo empezar a moverme o hacer deporte.',
     por:'Al esfuerzo físico se suman el ruido, la gente y el cambio de rutina. No te falta voluntad. Te sobran barreras, y casi todas se pueden quitar.' },
-  { id:16, g:'cuerpo', corto:'Me dicen que deje de moverme',
+  { id:16, g:'cuerpo', corto:'Me piden que deje de moverme porque molesto',
     frase:'Me han pedido que deje de moverme porque molesto.',
     por:'Moverte te ayuda a concentrarte o a regularte, y cortarlo del todo suele empeorar las cosas. La clave está en encontrar formas que te sirvan sin chocar con el entorno.' }
 ];
@@ -484,12 +880,16 @@ const grupo = id => GRUPOS.find(g => g.id === id);
 /* Estado */
 let marcadas = new Set();
 let vistas = new Set();
+let descartadas = new Set();   /* casillas marcadas como «No me pasa» */
 let lineasHechas = new Set();
 let abierta = null;
 let ultimoFoco = null;
 
-/* Sin memoria entre visitas: cada vez que se abre, el bingo empieza vacío. */
-function guardar(){}
+function guardar(){
+  try{
+    localStorage.setItem(CLAVE, JSON.stringify({ m:[...marcadas], v:[...vistas], d:[...descartadas] }));
+  }catch(e){}
+}
 function cargar(){
   try{
     const raw = localStorage.getItem(CLAVE);
@@ -497,6 +897,7 @@ function cargar(){
     const d = JSON.parse(raw);
     if(Array.isArray(d.m)) marcadas = new Set(d.m.filter(id => porId(id)));
     if(Array.isArray(d.v)) vistas = new Set(d.v.filter(id => porId(id)));
+    if(Array.isArray(d.d)) descartadas = new Set(d.d.filter(id => porId(id) && !marcadas.has(id)));
   }catch(e){}
 }
 
@@ -505,15 +906,24 @@ const SELLO = '<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" ar
   '<path d="M50 8c12 0 21 4 29 11s13 18 13 31c0 12-4 22-12 30s-18 12-30 12c-12 0-22-4-30-12S8 62 8 50c0-12 4-22 12-30S38 8 50 8z" fill="none" stroke="rgba(23,21,17,.28)" stroke-width="2.4" vector-effect="non-scaling-stroke"/>'+
   '</svg>';
 
+/* Aspa de «No me pasa». Se estira a la casilla sin engordar el trazo. */
+const TACHA = '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+
+  '<path d="M14 14L86 86M86 14L14 86" stroke="rgba(181,83,42,.55)" stroke-width="2" stroke-linecap="round" fill="none" vector-effect="non-scaling-stroke"/>'+
+  '</svg>';
+const NO_ICO = '<svg viewBox="0 0 8 8" aria-hidden="true"><path d="M1 1l6 6M7 1L1 7" stroke="#F2EFE6" stroke-width="1.6" stroke-linecap="round"/></svg>';
+
 function pintarRejilla(){
   const r = document.getElementById('rejilla');
   r.innerHTML = ORDEN.map((id, pos) => {
     const c = porId(id);
-    const m = marcadas.has(id), v = vistas.has(id);
-    return '<button type="button" class="casilla'+(m?' marcada':'')+(v?' vista':'')+'" data-id="'+id+'" data-pos="'+pos+'" '+
-      'aria-pressed="'+m+'" aria-label="'+esc(c.frase)+(m?' Marcada.':'')+'">'+
+    const m = marcadas.has(id), v = vistas.has(id), d = descartadas.has(id);
+    return '<button type="button" class="casilla'+(m?' marcada':'')+(v?' vista':'')+(d?' descartada':'')+'" data-id="'+id+'" data-pos="'+pos+'" '+
+      'aria-pressed="'+m+'" aria-label="'+esc(c.frase)+(m?' Marcada.':'')+(d?' No me pasa.':'')+'">'+
       '<span class="sello">'+SELLO+'</span>'+
+      '<span class="tacha">'+TACHA+'</span>'+
+      '<span class="no-ico" aria-hidden="true">'+NO_ICO+'</span>'+
       '<span class="leida" aria-hidden="true"></span>'+
+      '<span class="numc" aria-hidden="true">'+(pos+1)+'</span>'+
       '<span class="txt">'+esc(c.corto)+'</span></button>';
   }).join('');
   r.querySelectorAll('.casilla').forEach(b => b.addEventListener('click', () => abrir(+b.dataset.id, b)));
@@ -524,9 +934,11 @@ function actualizarCasilla(id){
   if(!b) return;
   const c = porId(id), m = marcadas.has(id);
   b.classList.toggle('marcada', m);
+  const d = descartadas.has(id);
   b.classList.toggle('vista', vistas.has(id));
+  b.classList.toggle('descartada', d);
   b.setAttribute('aria-pressed', m);
-  b.setAttribute('aria-label', c.frase + (m ? ' Marcada.' : ''));
+  b.setAttribute('aria-label', c.frase + (m ? ' Marcada.' : '') + (d ? ' No me pasa.' : ''));
 }
 
 function actualizarEstado(){
@@ -546,6 +958,7 @@ function abrir(id, origen){
   const c = porId(id);
   const pos = ORDEN.indexOf(id);
   document.getElementById('panelNum').textContent = 'Casilla '+(pos+1)+' de 16';
+  document.getElementById('panelBolaN').textContent = pos+1;
   document.getElementById('panelTit').textContent = c.frase;
   document.getElementById('panelTxt').textContent = c.por;
   const m = marcadas.has(id);
@@ -594,8 +1007,19 @@ function comprobarLineas(){
   LINEAS.forEach((l, i) => { if(l.every(p => marcadas.has(ORDEN[p]))) ahora.add(i); });
   const nuevas = [...ahora].filter(i => !lineasHechas.has(i));
   lineasHechas = ahora;
-  if(marcadas.size === 16) { avisar('Bingo. Las 16 casillas'); return; }
-  if(nuevas.length) avisar(nuevas.length > 1 ? 'Doble línea' : 'Línea');
+  if(marcadas.size === 16) { iluminar([...Array(16).keys()]); avisar('Bingo. Las 16 casillas'); return; }
+  if(nuevas.length){
+    iluminar([...new Set(nuevas.flatMap(i => LINEAS[i]))]);
+    avisar(nuevas.length > 1 ? 'Doble línea' : 'Línea');
+  }
+}
+function iluminar(posiciones){
+  posiciones.forEach(p => {
+    const b = document.querySelector('.casilla[data-pos="'+p+'"]');
+    if(!b) return;
+    b.classList.remove('brilla'); void b.offsetWidth; b.classList.add('brilla');
+    setTimeout(() => b.classList.remove('brilla'), 2300);
+  });
 }
 
 /* Resultado */
@@ -615,12 +1039,14 @@ function listaNombres(gs){
 }
 
 function medidor(valor, max = 4, on = '#DDA73E', off = 'rgba(242,239,230,.14)'){
-  let barras = '';
+  let bolas = '';
   for(let i = 0; i < max; i++){
-    barras += '<rect x="'+(i*14)+'" y="0" width="9" height="16" rx="4.5" fill="'+(i < valor ? on : off)+'"/>';
+    const cx = 9 + i*21;
+    bolas += '<circle cx="'+cx+'" cy="9" r="8" fill="'+(i < valor ? on : off)+'"/>'+
+      (i < valor ? '<circle cx="'+cx+'" cy="9" r="3.4" fill="#F2EFE6"/><circle cx="'+(cx-3)+'" cy="5.5" r="1.8" fill="rgba(242,239,230,.5)"/>' : '');
   }
-  const w = max*14-5;
-  return '<svg width="'+w+'" height="16" viewBox="0 0 '+w+' 16" preserveAspectRatio="none" role="img" aria-label="'+valor+' de '+max+'">'+barras+'</svg>';
+  const w = max*21 - 3;
+  return '<svg width="'+w+'" height="18" viewBox="0 0 '+w+' 18" preserveAspectRatio="xMidYMid meet" role="img" aria-label="'+valor+' de '+max+'">'+bolas+'</svg>';
 }
 
 function calendarioGoogle(){
@@ -649,8 +1075,11 @@ function pintarResultado(desplazar){
       medidor(r.cuenta[g.id])+'<span class="c">'+r.cuenta[g.id]+'/4</span></div>';
   }).join('');
 
+  /* Casillas marcadas, en el orden del cartón, para listarlas en el bloque del directo */
+  const misCasillas = ORDEN.map((id, pos) => [porId(id), pos]).filter(([c]) => marcadas.has(c.id));
+
   const yt = DIRECTO.youtube
-    ? '<a class="btn pri" href="'+esc(DIRECTO.youtube)+'" target="_blank" rel="noopener">Recibir aviso en YouTube</a>'
+    ? '<a class="btn pri" href="'+esc(DIRECTO.youtube)+'" target="_blank" rel="noopener">Activar recordatorio en YouTube</a>'
     : '';
 
   sec.innerHTML =
@@ -660,7 +1089,9 @@ function pintarResultado(desplazar){
     '<div class="barras">'+barras+'</div>'+
     '<div class="directo-bloque">'+
       '<p class="cuando">'+esc(DIRECTO.cuando)+'</p>'+
-      '<p>'+(unico ? 'Es uno de los cuatro grandes problemas que se tratan en el directo.' : 'Están entre los cuatro grandes problemas que se tratan en el directo.')+' Cada casilla que has marcado tiene su explicación a fondo allí.</p>'+
+      '<p>En el directo hablaremos de '+(misCasillas.length === 1 ? 'el problema que has marcado:' : 'los '+misCasillas.length+' problemas que has marcado:')+'</p>'+
+      '<ul class="mis-casillas">'+misCasillas.map(([c, pos]) =>
+        '<li><span class="mc-bola" aria-hidden="true">'+(pos+1)+'</span><span>'+esc(c.corto)+'</span></li>').join('')+'</ul>'+
       '<div class="acciones">'+yt+
         '<a class="btn'+(yt?'':' pri')+'" href="'+esc(calendarioGoogle())+'" target="_blank" rel="noopener">Añadir a Google Calendar</a>'+
       '</div>'+
@@ -669,12 +1100,13 @@ function pintarResultado(desplazar){
       '<button class="btn" id="btnPNG" type="button">Guardar mi cartón</button>'+
     '</div>';
   sec.classList.add('ver');
+  dibujarLuces(sec);
   document.getElementById('btnPNG').addEventListener('click', e => exportarPNG(r, e.currentTarget));
   if(desplazar) sec.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start' });
 }
 
 function reiniciar(){
-  marcadas = new Set(); vistas = new Set(); lineasHechas = new Set();
+  marcadas = new Set(); vistas = new Set(); descartadas = new Set(); lineasHechas = new Set();
   guardar();
   pintarRejilla();
   actualizarEstado();
@@ -756,8 +1188,10 @@ async function exportarPNG(r, boton){
     y += 44;
     ctx.fillStyle = '#F2EFE6';
     ctx.font = '800 76px Fraunces, Georgia, serif';
+    ctx.save(); ctx.shadowColor = 'rgba(221,167,62,.45)'; ctx.shadowBlur = 22;
     ctx.fillText('Bingo Singular', M, y);
-    y += 118;
+    ctx.restore();
+    y += 136;
 
     /* Cartón */
     const pad = 16, gw = maxW, cell = (gw - pad*2) / 4, ch = 150;
@@ -766,13 +1200,38 @@ async function exportarPNG(r, boton){
     redondo(ctx, M, y, gw, gh, 22); ctx.fill();
     ctx.strokeStyle = '#DDA73E'; ctx.lineWidth = 3;
     redondo(ctx, M, y, gw, gh, 22); ctx.stroke();
+    const bombillas = by => {
+      for(let bx = M + 30, k = 0; bx <= M + gw - 30; bx += 38, k++){
+        ctx.save();
+        ctx.shadowColor = k % 2 ? 'rgba(181,83,42,.9)' : 'rgba(221,167,62,.95)'; ctx.shadowBlur = 14;
+        ctx.fillStyle = k % 2 ? '#B5532A' : '#DDA73E';
+        ctx.beginPath(); ctx.arc(bx, by, 5.5, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#F2EFE6'; ctx.beginPath(); ctx.arc(bx, by, 2, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+    };
+    bombillas(y - 18); bombillas(y + gh + 18);
 
     ORDEN.forEach((id, pos) => {
       const c = porId(id);
       const cx = M + pad + (pos % 4)*cell, cy = y + pad + Math.floor(pos/4)*ch;
-      const m = marcadas.has(id);
-      ctx.fillStyle = m ? '#DDA73E' : '#262218';
-      ctx.fillRect(cx+2, cy+2, cell-4, ch-4);
+      const m = marcadas.has(id), dd = descartadas.has(id);
+      ctx.fillStyle = m ? '#DDA73E' : (dd ? '#171511' : '#262218');
+      redondo(ctx, cx+3, cy+3, cell-6, ch-6, 12); ctx.fill();
+      if(dd){
+        ctx.save();
+        ctx.strokeStyle = 'rgba(181,83,42,.75)'; ctx.lineWidth = 2;
+        redondo(ctx, cx+4, cy+4, cell-8, ch-8, 11); ctx.stroke();
+        ctx.strokeStyle = 'rgba(181,83,42,.5)'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(cx + cell*.16, cy + ch*.16); ctx.lineTo(cx + cell*.84, cy + ch*.84);
+        ctx.moveTo(cx + cell*.84, cy + ch*.16); ctx.lineTo(cx + cell*.16, cy + ch*.84);
+        ctx.stroke();
+        ctx.restore();
+      }
+      ctx.fillStyle = m ? 'rgba(23,21,17,.5)' : (dd ? 'rgba(181,83,42,.95)' : 'rgba(242,239,230,.3)');
+      ctx.font = '800 22px "Archivo Flex", Archivo, system-ui, sans-serif';
+      ctx.textAlign = 'right'; ctx.fillText(String(pos+1), cx + cell - 16, cy + 14); ctx.textAlign = 'left';
       if(m){
         ctx.save();
         ctx.translate(cx + cell/2, cy + ch/2);
@@ -781,13 +1240,13 @@ async function exportarPNG(r, boton){
         ctx.beginPath(); ctx.ellipse(0, 0, Math.min(cell, ch)*0.40, Math.min(cell, ch)*0.38, 0, 0, Math.PI*2); ctx.stroke();
         ctx.restore();
       }
-      ctx.fillStyle = m ? '#171511' : 'rgba(242,239,230,.62)';
+      ctx.fillStyle = m ? '#171511' : (dd ? 'rgba(242,239,230,.42)' : 'rgba(242,239,230,.62)');
       ctx.font = (m ? '700' : '500') + ' 19px "Hanken Grotesk", system-ui, sans-serif';
       const lineas = envolver(ctx, c.corto, cell - 30).slice(0, 4);
       const alto = lineas.length * 23;
       lineas.forEach((l, i) => ctx.fillText(l, cx + 15, cy + ch - 16 - alto + i*23));
     });
-    y += gh + 56;
+    y += gh + 74;
 
     /* Resultado */
     ctx.fillStyle = '#DDA73E';
@@ -849,18 +1308,133 @@ document.getElementById('cerrar').addEventListener('click', cerrar);
 document.getElementById('velo').addEventListener('click', e => { if(e.target.id === 'velo') cerrar(); });
 document.addEventListener('keydown', e => { if(e.key === 'Escape' && abierta !== null) cerrar(); });
 document.getElementById('btnMarcar').addEventListener('click', () => {
-  const id = abierta; cerrar(); marcar(id, true);
+  const id = abierta; cerrar(); descartadas.delete(id); marcar(id, true);
 });
 document.getElementById('btnNo').addEventListener('click', () => {
-  const id = abierta; cerrar(); marcar(id, false);
+  /* «No me pasa» la deja tachada. «Desmarcar», en una casilla marcada, la deja neutra como antes. */
+  const id = abierta, eraMarcada = marcadas.has(id);
+  cerrar();
+  if(eraMarcada) descartadas.delete(id); else descartadas.add(id);
+  marcar(id, false);
 });
 document.getElementById('verResultado').addEventListener('click', () => pintarResultado(true));
 document.getElementById('reiniciar').addEventListener('click', reiniciar);
 
+/* Botón de la cabecera al estreno */
+(function botonEstreno(){
+  const a = document.getElementById('btnEstreno');
+  if(!a) return;
+  if(DIRECTO.youtube){
+    a.href = DIRECTO.youtube;
+  }else{
+    a.removeAttribute('href');
+    a.setAttribute('aria-disabled', 'true');
+    document.getElementById('btnEstrenoTxt').textContent = 'Enlace al estreno, muy pronto';
+  }
+  a.hidden = false;
+})();
+
+cargar();
 LINEAS.forEach((l, i) => { if(l.every(p => marcadas.has(ORDEN[p]))) lineasHechas.add(i); });
 pintarRejilla();
 actualizarEstado();
 observar(document.querySelectorAll('.item'));
+
+/* ---------------------------------------------------------------------------
+   Bombillas de marquesina en SVG
+   Rodean cada .luces siguiendo sus esquinas redondeadas y recorren cada .tira.
+   El número de bombillas se ajusta al perímetro para que el paso sea regular y
+   ninguna quede cortada. En los marcos es múltiplo de 3 para que la
+   persecución de luces dé la vuelta sin saltos. Se redibujan al cambiar de
+   tamaño.
+--------------------------------------------------------------------------- */
+const PASO_BOMBILLA = 22, HOLGURA = 12, SEPARACION_MARCO = 4;
+
+function puntosMarco(w, h, r, n){
+  r = Math.max(0, Math.min(r, w/2, h/2));
+  const arco = Math.PI*r/2;
+  const tramos = [
+    ['l', r,0, w-r,0], ['a', w-r,r, -90,0],
+    ['l', w,r, w,h-r], ['a', w-r,h-r, 0,90],
+    ['l', w-r,h, r,h], ['a', r,h-r, 90,180],
+    ['l', 0,h-r, 0,r], ['a', r,r, 180,270]
+  ];
+  const largo = t => t[0] === 'l' ? Math.hypot(t[3]-t[1], t[4]-t[2]) : arco;
+  const L = tramos.reduce((s, t) => s + largo(t), 0);
+  const punto = s => {
+    for(const t of tramos){
+      const len = largo(t);
+      if(s <= len && len > 0){
+        const k = s/len;
+        if(t[0] === 'l') return [t[1]+(t[3]-t[1])*k, t[2]+(t[4]-t[2])*k];
+        const a = (t[3]+(t[4]-t[3])*k)*Math.PI/180;
+        return [t[1]+r*Math.cos(a), t[2]+r*Math.sin(a)];
+      }
+      s -= len;
+    }
+    return [r, 0];
+  };
+  return Array.from({length:n}, (_, i) => punto((i+.5)*L/n));
+}
+
+function marcadoBombillas(pts){
+  let base = '';
+  const fases = ['', '', ''];
+  pts.forEach(([x, y], i) => {
+    const X = (x+HOLGURA).toFixed(1), Y = (y+HOLGURA).toFixed(1);
+    base += '<circle cx="'+X+'" cy="'+Y+'" r="3.4" class="bb-vidrio"/>';
+    fases[i%3] += '<circle cx="'+X+'" cy="'+Y+'" r="10" fill="url(#bHalo)"/>'+
+                  '<circle cx="'+X+'" cy="'+Y+'" r="2.4" class="bb-nucleo"/>';
+  });
+  return '<g>'+base+'</g>'+fases.map((f, k) => '<g class="bb-on f'+k+'">'+f+'</g>').join('');
+}
+
+function dibujarLuces(el){
+  const w = el.offsetWidth, h = el.offsetHeight;
+  if(!w || !h) return;
+  let svg = el.querySelector(':scope > svg.bombillas');
+  if(!svg){
+    svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'bombillas');
+    svg.setAttribute('aria-hidden', 'true');
+    el.appendChild(svg);
+  }
+  const radio = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0;
+  const clave = w+'x'+h+'r'+radio;
+  if(svg.dataset.k === clave) return;
+  svg.dataset.k = clave;
+
+  let pts;
+  if(el.classList.contains('tira')){
+    const n = Math.max(1, Math.round(w/24));
+    pts = Array.from({length:n}, (_, i) => [(i+.5)*w/n, h/2]);
+  }else{
+    const D = SEPARACION_MARCO, W = w+2*D, H = h+2*D, R = radio+D;
+    const perimetro = 2*(W+H) - (8 - 2*Math.PI)*Math.min(R, W/2, H/2);
+    const n = Math.max(12, Math.round(perimetro/PASO_BOMBILLA/3)*3);
+    pts = puntosMarco(W, H, R, n).map(([x, y]) => [x-D, y-D]);
+  }
+  const SW = w+2*HOLGURA, SH = h+2*HOLGURA;
+  svg.setAttribute('width', SW); svg.setAttribute('height', SH);
+  svg.setAttribute('viewBox', '0 0 '+SW+' '+SH);
+  /* El SVG se coloca desde el borde interior, así que se resta el grosor del borde */
+  svg.style.left = (-HOLGURA - el.clientLeft)+'px';
+  svg.style.top = (-HOLGURA - el.clientTop)+'px';
+  svg.innerHTML = marcadoBombillas(pts);
+}
+
+(function encenderLuces(){
+  const elementos = () => document.querySelectorAll('.luces, .tira');
+  document.documentElement.classList.add('bombillas-js');
+  if('ResizeObserver' in window){
+    const ro = new ResizeObserver(entradas => entradas.forEach(e => dibujarLuces(e.target)));
+    elementos().forEach(el => ro.observe(el));
+  }else{
+    elementos().forEach(dibujarLuces);
+    window.addEventListener('resize', () => elementos().forEach(dibujarLuces));
+  }
+})();
 </script>
-</body>
-</html>
+
+
+</body></html>
